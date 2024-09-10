@@ -1,7 +1,7 @@
 
 # OpenAppSec Project with Minikube & Ingress
 
-This project is an implementation of Open AppSec (open-appsec) security on top of an NGINX Ingress Controller in a Minikube cluster. The project leverages a declarative approach, using YAML files to define Kubernetes resources for easy customization. This method can be preferable for developers who want to avoid the complexity of Helm charts or interactive CLI scripts, and prefer full control over the resources in a Kubernetes cluster.
+This project is an implementation of ![Open AppSec](https://docs.openappsec.io/getting-started/start-with-kubernetes/install-using-interactive-cli-tool-ingress-nginx) (open-appsec) security on top of an NGINX Ingress Controller in a Minikube cluster. The project leverages a declarative approach, using YAML files to define Kubernetes resources for easy customization. This method can be preferable for developers who want to avoid the complexity of Helm charts or interactive CLI scripts, and prefer full control over the resources in a Kubernetes cluster.
 
 The architecture of this project secures a simple hello-world application exposed via NGINX Ingress using Open AppSec security policies enforced via custom rules.
 
@@ -15,14 +15,14 @@ All these components are running inside a single node in the Minikube cluster.
 
 ## Diagrams:
 ### Architecture
-![High-Level Diagram of the Architecture](https://github.com/miloskec/ingress-test-app/...)
+![High-Level Diagram of the Architecture](https://github.com/miloskec/ingress-test-app/blob/master/docs-images/openappsec.png)
 
 This architecture ensures that external traffic enters the cluster via the NGINX Ingress Controller, passes through the Open AppSec Agent (which applies security rules), and is then routed to the Hello-World application service.
 
 ### Requests
-![SQL Injection query](https://github.com/miloskec/ingress-test-app/...)
-![SQL Injection post](https://github.com/miloskec/ingress-test-app/...)
-![Clean request](https://github.com/miloskec/ingress-test-app/...)
+![SQL Injection query](https://github.com/miloskec/ingress-test-app/blob/master/docs-images/sql-inject-url.png)
+![SQL Injection post](https://github.com/miloskec/ingress-test-app/blob/master/docs-images/sql-inject-post.png)
+![Clean request](https://github.com/miloskec/ingress-test-app/blob/master/docs-images/no-injections.png)
 
 ## Installation Instructions
 
