@@ -1,0 +1,131 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: "2024-09-09T18:12:48Z"
+  generation: 1
+  name: logtriggers.openappsec.io
+  resourceVersion: "1362"
+  uid: 5e5882cd-0c34-4634-a539-276c0227e17d
+spec:
+  conversion:
+    strategy: None
+  group: openappsec.io
+  names:
+    kind: LogTrigger
+    listKind: LogTriggerList
+    plural: logtriggers
+    shortNames:
+    - logtrigger
+    singular: logtrigger
+  scope: Cluster
+  versions:
+  - name: v1beta1
+    schema:
+      openAPIV3Schema:
+        properties:
+          spec:
+            properties:
+              access-control-logging:
+                properties:
+                  allow-events:
+                    type: boolean
+                  drop-events:
+                    type: boolean
+                type: object
+              additional-suspicious-events-logging:
+                properties:
+                  enabled:
+                    type: boolean
+                  minimum-severity:
+                    enum:
+                    - high
+                    - critical
+                    type: string
+                  response-body:
+                    type: boolean
+                  response-code:
+                    type: boolean
+                type: object
+              appsec-logging:
+                properties:
+                  all-web-requests:
+                    type: boolean
+                  detect-events:
+                    type: boolean
+                  prevent-events:
+                    type: boolean
+                type: object
+              extended-logging:
+                properties:
+                  http-headers:
+                    type: boolean
+                  request-body:
+                    type: boolean
+                  url-path:
+                    type: boolean
+                  url-query:
+                    type: boolean
+                type: object
+              log-destination:
+                properties:
+                  cef-service:
+                    items:
+                      properties:
+                        address:
+                          type: string
+                        port:
+                          type: integer
+                        proto:
+                          enum:
+                          - tcp
+                          - udp
+                          type: string
+                      type: object
+                    type: array
+                  cloud:
+                    type: boolean
+                  file:
+                    type: string
+                  stdout:
+                    properties:
+                      format:
+                        enum:
+                        - json
+                        - json-formatted
+                        type: string
+                    type: object
+                  syslog-service:
+                    items:
+                      properties:
+                        address:
+                          type: string
+                        port:
+                          type: integer
+                      type: object
+                    type: array
+                type: object
+            type: object
+        type: object
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: LogTrigger
+    listKind: LogTriggerList
+    plural: logtriggers
+    shortNames:
+    - logtrigger
+    singular: logtrigger
+  conditions:
+  - lastTransitionTime: "2024-09-09T18:12:48Z"
+    message: no conflicts found
+    reason: NoConflicts
+    status: "True"
+    type: NamesAccepted
+  - lastTransitionTime: "2024-09-09T18:12:48Z"
+    message: the initial names have been accepted
+    reason: InitialNamesAccepted
+    status: "True"
+    type: Established
+  storedVersions:
+  - v1beta1

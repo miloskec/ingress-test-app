@@ -1,0 +1,21 @@
+apiVersion: v1
+data:
+  allow-snippet-annotations: "false"
+kind: ConfigMap
+metadata:
+  annotations:
+    meta.helm.sh/release-name: open-appsec
+    meta.helm.sh/release-namespace: appsec
+  creationTimestamp: "2024-09-09T21:55:50Z"
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: open-appsec
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: open-appsec-k8s-nginx-ingress
+    app.kubernetes.io/part-of: open-appsec-k8s-nginx-ingress
+    app.kubernetes.io/version: 1.1.16
+    helm.sh/chart: open-appsec-k8s-nginx-ingress-4.11.2
+  name: open-appsec-open-appsec-k8s-nginx-ingress-controller
+  namespace: appsec
+  resourceVersion: "1381"
+  uid: 517a32ac-846e-48af-99d9-2de371281b10

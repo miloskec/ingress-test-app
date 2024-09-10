@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    meta.helm.sh/release-name: open-appsec
+    meta.helm.sh/release-namespace: appsec
+  creationTimestamp: "2024-09-09T21:55:50Z"
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: open-appsec
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: open-appsec-k8s-nginx-ingress
+    app.kubernetes.io/part-of: open-appsec-k8s-nginx-ingress
+    app.kubernetes.io/version: 1.1.16
+    helm.sh/chart: open-appsec-k8s-nginx-ingress-4.11.2
+  name: open-appsec-open-appsec-k8s-nginx-ingress-controller-admission
+  namespace: appsec
+  resourceVersion: "1388"
+  uid: 72d27719-bc48-45a9-96c0-43d937667954
+spec:
+  clusterIP: 10.102.113.154
+  clusterIPs:
+  - 10.102.113.154
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - appProtocol: https
+    name: https-webhook
+    port: 443
+    protocol: TCP
+    targetPort: webhook
+  selector:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: open-appsec
+    app.kubernetes.io/name: open-appsec-k8s-nginx-ingress
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}

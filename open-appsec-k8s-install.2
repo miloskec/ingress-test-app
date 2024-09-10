@@ -1,0 +1,387 @@
+#!/bin/bash
+
+echo "open-appsec for Kubernetes Ingress Installer v1.2244.1"
+echo "For release notes and known limitations check:"
+echo "https://docs.openappsec.io/release-notes"
+echo ""
+
+if [ -z "$(command -v yq)" ]; then
+  wget -q https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq 2>&1 >/dev/null
+  chmod +x /usr/bin/yq
+fi
+
+if [ -z "$(command -v jq)" ]; then
+  wget -q https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 -O /usr/bin/jq 2>&1 >/dev/null
+  chmod +x /usr/bin/jq
+fi
+
+uuid=$(uuidgen)
+
+prevent=""
+token=""
+
+touch open-appsec-k8s-install.log
+while true; do
+    if [ "$1" = "--prevent" ] || [ "$1" = "-p" ]; then
+  prevent="--prevent"
+	echo "$(date) $uuid install with --prevent option" >> open-appsec-k8s-install.log
+        shift
+    elif [ "$1" = "--token" ]; then
+        shift
+        token="$1"
+        echo "$(date) $uuid install with token ${token}" >> open-appsec-k8s-install.log
+        shift
+    elif [ -z $1 ]; then
+        break
+else
+        echo "Unsupported option: $1"
+fi
+done
+
+echo "$(date) $uuid install started" >> open-appsec-k8s-install.log
+
+echo "$(date) $uuid ingresses list(base64): $(kubectl get ing -A | base64 -w 0)" >> open-appsec-k8s-install.log
+
+if [ $(kubectl get ing -A | wc -l) -le 1 ];
+then
+   echo "This environment has no Kubernetes ingress. Exiting (Error 1)."
+   echo "$(date) $uuid Error 1" >> open-appsec-k8s-install.log
+   exit 1
+fi
+
+echo "The installer will generate HELM charts/manifests (YAMLs) and you will be able to review and/or deploy them."
+echo ""
+
+echo ">> Ingress (step 1 of 3)"
+
+echo "Existing Ingresses:"
+kubectl get ing -A
+echo ""
+echo "Options:"
+echo "1. Duplicate an existing Ingress and add open-appsec to it (existing and new ingresses will run side-by-side)" 
+echo "2. Add open-appsec to an existing Ingress resource"
+
+while [ 1 ]
+do
+    echo -n "[open-appsec/install/ingress] Select [1]: "
+    read -r input
+
+    newingress=0
+    if [[ "$input" == ""  || "$input" == "1" ]];
+    then
+      newingress=1
+      verb=duplicate
+      echo "$(date) $uuid user asked to duplicate ingress" >> open-appsec-k8s-install.log
+    elif [ "$input" == "2" ];
+    then
+      newingress=2
+      verb=add
+      echo "$(date) $uuid user asked to add to ingress" >> open-appsec-k8s-install.log
+    fi  
+     
+    if [ $newingress -ge 1 ]; then
+      ingress_suggestion=
+      namespace_suggestion=
+      for ns in $(kubectl get ing -A -o json | jq '.items[] | .metadata["namespace"]' | sed -e 's/^"//' -e 's/"$//'); do
+          if [[ -z ${namespace_suggestion} ]]; then
+              namespace_suggestion="${ns}"
+          elif [[ -z "$(echo -n "${namespace_suggestion}" | grep "${ns}")" ]]; then
+              namespace_suggestion="${namespace_suggestion} ${ns}"
+          fi
+      done
+  
+      use_all_ns=0
+      valid=1
+      while [ $valid -ne 0 ]; do
+          first_ns="$(echo ${namespace_suggestion} | cut -d ' ' -f 1)"
+          echo "[open-appsec/install/ingress/$verb/namespace] Enter existing Ingress namespace [${first_ns}]: "
+          echo "All Ingress namespaces"
+          echo "$namespace_suggestion" | tr " " "\n"
+          namespace=
+          read -r namespace
+          if [ "$namespace" == "" ] || [ "$namespace" == "All Ingress namespaces" ]; then
+              namespace="${first_ns}"
+          elif [ "$namespace" == "All Ingress namespaces" ]; then
+              use_all_ns=1
+              namespace=${namespace_suggestion}
+          fi
+
+          ingress_suggestion=
+          ingress_print_suggestions=
+          for ns in ${namespace}; do
+              for ing_name in $(kubectl get ing -n ${ns} -o json | jq '.items[] | .metadata["name"]' | sed -e 's/^"//' -e 's/"$//'); do
+                  if [[ -z ${ingress_suggestion} ]]; then
+                      ingress_print_suggestions="${ing_name}"
+                      ingress_suggestion="${ns}|${ing_name}"
+                  elif [[ -z "$(echo -n "${ingress_suggestion}" | grep "${ing_name}")" ]]; then
+                      ingress_print_suggestions="${ingress_print_suggestions} ${ing_name}"
+                      ingress_suggestion="${ingress_suggestion} ${ns}|${ing_name}"
+                  fi
+              done
+          done
+
+          first_ing="$(echo ${ingress_print_suggestions} | cut -d ' ' -f 1)"
+          echo "[open-appsec/install/ingress/$verb/name] Enter existing Ingress name [${first_ing}]: "
+          echo "All Ingress names"
+          echo "$ingress_print_suggestions" | tr " " "\n"
+          ingress=
+          read -r ingress_from_user
+          if [ "$ingress_from_user" == "All Ingress names" ]; then
+              ingress=$ingress_suggestion
+          else
+              if [ "$ingress_from_user" == "" ]; then
+                  ingress_from_user="${first_ing}"
+              fi
+
+              if [ $use_all_ns -eq 1 ]; then
+                  for ns in ${namespace}; do
+                      if [[ -z ${ingress} ]]; then
+                          ingress="${ns}|${ingress_from_user}"
+                      else
+                          ingress="${ingress} ${ns}|${ingress_from_user}"
+                      fi
+                  done
+              else
+                  ingress="${namespace}|${ingress_from_user}"
+              fi
+          fi
+      
+          valid=0
+          for ing_and_ns in ${ingress}; do
+              ns_name="$(echo "${ing_and_ns}" | cut -d "|" -f 1)"
+              ing_name="$(echo "${ing_and_ns}" | cut -d "|" -f 2)"
+              kubectl get ing ${ing_name} -n ${ns_name} 2>&1 >/dev/null
+              get_ing_rc=$?
+              if [ ${get_ing_rc} -ne 0 ]; then
+                  valid=${get_ing_rc}
+              fi
+          done
+      done
+
+      echo "$(date) $uuid namespace: $namespace, ingress: $ingress" >> open-appsec-k8s-install.log
+
+      echo > ingress.yaml 
+      for ns in ${namespace}; do
+          curr_ingresses=
+          for ing_and_ns in ${ingress}; do
+              ns_name="$(echo "${ing_and_ns}" | cut -d "|" -f 1)"
+              ing_name="$(echo "${ing_and_ns}" | cut -d "|" -f 2)"
+              if [ "${ns_name}" != "${ns}" ]; then 
+                  continue;
+              fi
+              if [ -z "${curr_ingresses}" ]; then
+                  curr_ingresses="${ing_name}"
+              else
+                  curr_ingresses="${curr_ingresses} ${ing_name}"
+              fi
+          done
+          if [ -z "${curr_ingresses}" ]; then
+              continue
+          fi
+
+          echo "$(date) $uuid ingress(base64): $(kubectl get ingress ${curr_ingresses} -n ${ns} -o json | base64 -w 0)" >> open-appsec-k8s-install.log
+
+          # Export ingress to a file  
+          kubectl get ingress ${curr_ingresses} -n ${ns} -o json | jq 'del(.metadata.resourceVersion,.metadata.uid,.metadata.selfLink,.metadata.creationTimestamp,.status,.metadata.generation,.metadata.ownerReferences)' | yq eval - -P  >> ingress.yaml.tmp
+            
+          if grep -q "kubernetes.io/ingress.class: nginx" ingress.yaml.tmp ; then
+            echo "Using deprecated 'kubernetes.io/ingress.class' annotation instead of 'ingressClassName' specs. Exiting (Error 5)."
+            echo "$(date) $uuid ingress Error 5" >> open-appsec-k8s-install.log
+            exit
+          fi
+
+          if grep -q "ingressClassName: appsec-nginx" ingress.yaml.tmp ; then
+            echo "Ingress resource 'appsec-nginx' seems to already been updated, reupdating of the resource is not supported. Exiting (Error 6)."
+            echo "$(date) $uuid ingress Error 6" >> open-appsec-k8s-install.log
+            exit
+          fi
+
+          if ! grep -q "ingressClassName: nginx" ingress.yaml.tmp ; then
+            echo "Ingress type is not supported by this automatic tool. Please refer to the documentation. Exiting (Error 2)."
+            echo "$(date) $uuid ingress Error 2 $(grep "ingressClassName")" >> open-appsec-k8s-install.log
+            exit
+          fi
+          
+          sed -i 's/ingressClassName: nginx/ingressClassName: appsec-nginx/g' ingress.yaml.tmp
+          
+          # Change name only if it's a duplicated Ingress
+          
+          if [ $newingress -eq 1 ];
+          then
+              sed -i "s/name: ${curr_ingresses}/name: ${curr_ingresses}-appsec/g" ingress.yaml.tmp
+          fi
+
+          cat ingress.yaml.tmp >> ingress.yaml
+          rm ingress.yaml.tmp
+          echo "---" >> ingress.yaml
+      done
+      break
+    fi    
+done
+
+mkdir -p open-appsec-tools
+
+if [[ -z "${KILLERCODA_PLAYGROUND}" ]]; then
+  PLAYGROUND="false"
+  HELM_FOLDER="packages"
+else
+  PLAYGROUND="true"
+  HELM_FOLDER="playground"
+fi
+
+wget -q https://downloads.openappsec.io/${HELM_FOLDER}/helm-charts/nginx-ingress/open-appsec-k8s-nginx-ingress-latest.tgz -O open-appsec-k8s-nginx-ingress-latest.tgz 2>&1 >/dev/null
+
+wget -q https://downloads.openappsec.io/scripts/open-appsec-cm -O open-appsec-tools/open-appsec 2>&1 >/dev/null
+
+wget -q https://downloads.openappsec.io/open-appsec-cli/linux/open-appsec-config 2>&1 >/dev/null
+
+chmod +x open-appsec-config
+chmod +x open-appsec-tools/open-appsec
+
+echo ""
+echo ">> Policy (step 2 of 3)"
+echo "You can use the default policy or change it."
+
+./open-appsec-config --config $prevent --cloud
+
+HELMCHART=./open-appsec-policy-helm.tgz
+
+if [[ -z "${APPSEC_GRACE_PERIOD}" ]]; then
+  GRACE_PERIOD=300
+else
+  GRACE_PERIOD="${APPSEC_GRACE_PERIOD}"
+fi
+
+EMAIL_REGEX="^[a-z0-9!#\$%&'*+/=?^_\`{|}~-]+(\.[a-z0-9!#$%&'*+/=?^_\`{|}~-]+)*@([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z0-9]([a-z0-9-]*[a-z0-9])?\$"
+while ! [[ "${EMAIL_ADDRESS}" =~ $EMAIL_REGEX ]] && ! [[ $EMAIL_ADDRESS = "IGNORE" ]]; do
+  echo "Add your email to receive important security updates and so you can approach us with technical questions (enter IGNORE to ignore):"
+  read -r EMAIL_ADDRESS
+  echo ""
+done
+
+if [[ $EMAIL_ADDRESS = "IGNORE" ]]; then
+  EMAIL_ADDRESS=""
+fi
+
+echo ">> Run the following commands to apply the configuration (Step 3 of 3):"
+if [[  -z $token ]];
+then
+echo "helm install open-appsec-k8s-nginx-ingress-latest.tgz --name-template open-appsec -n appsec --create-namespace --set appsec.mode=standalone --set appsec.persistence.enabled=false --set controller.ingressClassResource.name=\"appsec-nginx\" --set controller.ingressClassResource.controllerValue=\"k8s.io/appsec-nginx\" --set controller.terminationGracePeriodSeconds=${GRACE_PERIOD} --set appsec.playground=${PLAYGROUND} --set appsec.userEmail=\"${EMAIL_ADDRESS}\""
+else
+	echo "helm install open-appsec-k8s-nginx-ingress-latest.tgz --name-template open-appsec -n appsec --create-namespace --set appsec.agentToken="${token}" --set appsec.persistence.enabled=false --set controller.ingressClassResource.name=\"appsec-nginx\" --set controller.ingressClassResource.controllerValue=\"k8s.io/appsec-nginx\" --set controller.terminationGracePeriodSeconds=${GRACE_PERIOD} --set appsec.playground=${PLAYGROUND} --set appsec.userEmail=\"${EMAIL_ADDRESS}\""
+fi
+echo "...wait about one minute for resources to load..."
+echo "kubectl apply -f ingress.yaml"
+
+if test -f "$HELMCHART";
+then
+  echo "helm install $HELMCHART"
+  #Update policy name in ingress.yaml
+  sed -i "s/annotations:/&\n    openappsec.io\/policy: open-appsec-best-practice-policy/" ingress.yaml
+else
+  #Update policy name in ingress.yaml
+  policyname=$(yq e 'select(.kind == "Policy").metadata.name' open-appsec-policy.yaml)
+  sed -i "s/annotations:/&\n    openappsec.io\/policy: $policyname/" ingress.yaml
+  echo "kubectl apply -f open-appsec-policy.yaml"
+fi
+echo ""
+
+t2=$(date --date="2022-08-07T21:53:38.528124" +%s)
+
+while [ 1 ]
+do
+    echo -n "Run now ([yes]/no)? "
+    read -r input
+    
+    if [[ "$input" == ""  || "$input" == "yes" ]];
+    then
+      echo "$(date) $uuid user asked to run commands" >> open-appsec-k8s-install.log
+      echo "Installing open-appsec helm..."
+	  if [[  -z $token ]];
+	  then
+      helm install open-appsec-k8s-nginx-ingress-latest.tgz --name-template open-appsec -n appsec --create-namespace --set appsec.mode=standalone  --set appsec.persistence.enabled=false --set controller.ingressClassResource.name="appsec-nginx" --set controller.ingressClassResource.controllerValue="k8s.io/appsec-nginx" --set controller.terminationGracePeriodSeconds=${GRACE_PERIOD} --set appsec.playground=${PLAYGROUND} --set appsec.userEmail="${EMAIL_ADDRESS}"
+	  else
+	    helm install open-appsec-k8s-nginx-ingress-latest.tgz --name-template open-appsec -n appsec --create-namespace --set appsec.agentToken="${token}"  --set appsec.persistence.enabled=false --set controller.ingressClassResource.name="appsec-nginx" --set controller.ingressClassResource.controllerValue="k8s.io/appsec-nginx" --set controller.terminationGracePeriodSeconds=${GRACE_PERIOD} --set appsec.playground=${PLAYGROUND} --set appsec.userEmail="${EMAIL_ADDRESS}"
+	  fi
+      
+      echo -n "Loading resources..."
+
+      i=0
+      while [ 1 ]
+      do
+        if [ "$i" -le 100 ]
+        then 
+           echo -n "."
+           sleep 3
+           i=$((i+1))
+ 
+           d1=$((kubectl exec -it open-appsec-cp-k8s-appsec-nginx-ingress-controller-0 -n appsec -- cpnano -s | grep "Last policy update" | tail -c 28) 2>/dev/null)
+           t1=$((date --date="$d1" +%s) 2> /dev/null)
+  
+           if [ "$t1" -ge "$t2" ] 2> /dev/null  
+           then
+             ready=$((kubectl get pods -n appsec | grep "2/2") 2> /dev/null)
+             if [ ! -z "$ready" ]
+             then
+               break
+             fi
+           fi
+         else
+           echo "Too long, exiting (Error 3)."
+           exit 3
+         fi
+      done
+
+      echo ""
+      echo "Applying ingress.yaml..."
+      kubectl apply -f ingress.yaml
+      if test -f "$HELMCHART";
+      then
+         echo -n "Installing $HELMCHART..."
+         helm install open-appsec-helm $HELMCHART
+      else
+        echo -n "Applying open-appsec-policy.yaml..."
+        kubectl apply -f open-appsec-policy.yaml
+      fi
+  
+      echo -n "Loading resources..."
+      
+      t2=$t1
+      i=0
+      while [ 1 ]
+      do
+         if [ "$i" -le 60 ] 
+         then
+           echo -n "."
+           sleep 1
+           i=$((i+1))
+  
+           d1=$((kubectl exec -it open-appsec-cp-k8s-appsec-nginx-ingress-controller-0 -n appsec -- cpnano -s | grep "Last policy update" | tail -c 28) 2>/dev/null)
+           t1=$((date --date="$d1" +%s) 2> /dev/null)
+  
+           if [ "$t1" -ge "$t2" ] 2> /dev/null;  
+           then
+             break;
+           fi
+        else
+           echo "Too long, exiting (Error 4)."
+           exit 4
+        fi   
+      done      
+  
+      echo ""
+      break
+    elif [ "$input" == "no" ];
+    then
+      echo "$(date) $uuid user asked not to run commands" >> open-appsec-k8s-install.log
+      echo "You can run the commands yourself any time."
+      break
+    fi
+done
+
+
+echo ""
+echo "Installation completed!"
+
+echo "For release notes and known limitations check: https://docs.openappsec.io/release-notes"
+echo "For troubleshooting and support: https://openappsec.io/support"

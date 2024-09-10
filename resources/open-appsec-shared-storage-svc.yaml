@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    meta.helm.sh/release-name: open-appsec
+    meta.helm.sh/release-namespace: appsec
+  creationTimestamp: "2024-09-09T21:55:50Z"
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  name: open-appsec-shared-storage-svc
+  namespace: appsec
+  resourceVersion: "1392"
+  uid: ca313b33-01ba-43b9-8336-2ed90cd91401
+spec:
+  clusterIP: 10.104.246.250
+  clusterIPs:
+  - 10.104.246.250
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  - name: https
+    port: 443
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: open-appsec-shared-storage-lbl
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}

@@ -1,0 +1,58 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: "2024-09-09T18:12:48Z"
+  generation: 1
+  name: trustedsources.openappsec.io
+  resourceVersion: "1373"
+  uid: cdb5c1ed-749b-4976-85ab-dfb54d97d419
+spec:
+  conversion:
+    strategy: None
+  group: openappsec.io
+  names:
+    kind: TrustedSource
+    listKind: TrustedSourceList
+    plural: trustedsources
+    shortNames:
+    - trustedsource
+    singular: trustedsource
+  scope: Cluster
+  versions:
+  - name: v1beta1
+    schema:
+      openAPIV3Schema:
+        properties:
+          spec:
+            properties:
+              minNumOfSources:
+                type: integer
+              sourcesIdentifiers:
+                items:
+                  type: string
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: TrustedSource
+    listKind: TrustedSourceList
+    plural: trustedsources
+    shortNames:
+    - trustedsource
+    singular: trustedsource
+  conditions:
+  - lastTransitionTime: "2024-09-09T18:12:48Z"
+    message: no conflicts found
+    reason: NoConflicts
+    status: "True"
+    type: NamesAccepted
+  - lastTransitionTime: "2024-09-09T18:12:48Z"
+    message: the initial names have been accepted
+    reason: InitialNamesAccepted
+    status: "True"
+    type: Established
+  storedVersions:
+  - v1beta1

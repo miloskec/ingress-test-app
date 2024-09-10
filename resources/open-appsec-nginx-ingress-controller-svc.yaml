@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    meta.helm.sh/release-name: open-appsec
+    meta.helm.sh/release-namespace: appsec
+  creationTimestamp: "2024-09-09T21:55:50Z"
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: open-appsec
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: open-appsec-k8s-nginx-ingress
+    app.kubernetes.io/part-of: open-appsec-k8s-nginx-ingress
+    app.kubernetes.io/version: 1.1.16
+    helm.sh/chart: open-appsec-k8s-nginx-ingress-4.11.2
+  name: open-appsec-open-appsec-k8s-nginx-ingress-controller
+  namespace: appsec
+  resourceVersion: "1611"
+  uid: f2c52a8b-a042-4dc9-a64e-2dbfe86547a2
+spec:
+  allocateLoadBalancerNodePorts: true
+  clusterIP: 10.96.7.127
+  clusterIPs:
+  - 10.96.7.127
+  externalTrafficPolicy: Cluster
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - appProtocol: http
+    name: http
+    nodePort: 30580
+    port: 80
+    protocol: TCP
+    targetPort: http
+  - appProtocol: https
+    name: https
+    nodePort: 31759
+    port: 443
+    protocol: TCP
+    targetPort: https
+  selector:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: open-appsec
+    app.kubernetes.io/name: open-appsec-k8s-nginx-ingress
+  sessionAffinity: None
+  type: LoadBalancer
+status:
+  loadBalancer:
+    ingress:
+    - ip: 127.0.0.1
+      ipMode: VIP

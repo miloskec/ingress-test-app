@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+    meta.helm.sh/release-name: open-appsec
+    meta.helm.sh/release-namespace: appsec
+  creationTimestamp: "2024-09-09T21:55:50Z"
+  generation: 1
+  labels:
+    app: open-appsec-learning-lbl
+    app.kubernetes.io/managed-by: Helm
+  name: open-appsec-learning-deployment
+  namespace: appsec
+  resourceVersion: "1553"
+  uid: 81949a5a-1c46-47de-83de-d45560b7b80c
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: open-appsec-learning-lbl
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: open-appsec-learning-lbl
+        group: fog-core
+    spec:
+      containers:
+      - env:
+        - name: SHARED_STORAGE_HOST
+          value: open-appsec-shared-storage-svc
+        - name: K8S_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        image: ghcr.io/openappsec/smartsync:latest
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /health/live
+            port: 80
+            scheme: HTTP
+          initialDelaySeconds: 20
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 10
+        name: open-appsec-learning
+        ports:
+        - containerPort: 80
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /health/ready
+            port: 80
+            scheme: HTTP
+          initialDelaySeconds: 3
+          periodSeconds: 15
+          successThreshold: 1
+          timeoutSeconds: 10
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsUser: 0
+      terminationGracePeriodSeconds: 30
+status:
+  availableReplicas: 1
+  conditions:
+  - lastTransitionTime: "2024-09-09T21:56:20Z"
+    lastUpdateTime: "2024-09-09T21:56:20Z"
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  - lastTransitionTime: "2024-09-09T21:55:50Z"
+    lastUpdateTime: "2024-09-09T21:56:20Z"
+    message: ReplicaSet "open-appsec-learning-deployment-c684df88d" has successfully
+      progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1

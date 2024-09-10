@@ -1,0 +1,25 @@
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    openappsec.io/policy: open-appsec-best-practice-policy
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{"nginx.ingress.kubernetes.io/rewrite-target":"/"},"name":"example-ingress","namespace":"default"},"spec":{"ingressClassName":"nginx","rules":[{"host":"microservices.local","http":{"paths":[{"backend":{"service":{"name":"web","port":{"number":8080}}},"path":"/","pathType":"Prefix"}]}}]}}
+    nginx.ingress.kubernetes.io/rewrite-target: /
+  name: example-ingress-appsec
+  namespace: default
+spec:
+  ingressClassName: appsec-nginx
+  rules:
+    - host: microservices.local
+      http:
+        paths:
+          - backend:
+              service:
+                name: web
+                port:
+                  number: 8080
+            path: /
+            pathType: Prefix
+---

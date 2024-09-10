@@ -1,0 +1,101 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: "2024-09-09T18:12:48Z"
+  generation: 1
+  name: exceptions.openappsec.io
+  resourceVersion: "1359"
+  uid: fa9a4ff2-1eb8-4029-8d31-4d28c752d74a
+spec:
+  conversion:
+    strategy: None
+  group: openappsec.io
+  names:
+    kind: Exception
+    listKind: ExceptionList
+    plural: exceptions
+    shortNames:
+    - exception
+    singular: exception
+  scope: Cluster
+  versions:
+  - name: v1beta1
+    schema:
+      openAPIV3Schema:
+        properties:
+          spec:
+            items:
+              properties:
+                action:
+                  enum:
+                  - skip
+                  - accept
+                  - drop
+                  - suppressLog
+                  type: string
+                comment:
+                  type: string
+                countryCode:
+                  items:
+                    type: string
+                  type: array
+                countryName:
+                  items:
+                    type: string
+                  type: array
+                hostName:
+                  items:
+                    type: string
+                  type: array
+                paramName:
+                  items:
+                    type: string
+                  type: array
+                paramValue:
+                  items:
+                    type: string
+                  type: array
+                protectionName:
+                  items:
+                    type: string
+                  type: array
+                sourceIdentifier:
+                  items:
+                    type: string
+                  type: array
+                sourceIp:
+                  items:
+                    type: string
+                  type: array
+                url:
+                  items:
+                    type: string
+                  type: array
+              required:
+              - action
+              type: object
+            type: array
+        type: object
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: Exception
+    listKind: ExceptionList
+    plural: exceptions
+    shortNames:
+    - exception
+    singular: exception
+  conditions:
+  - lastTransitionTime: "2024-09-09T18:12:48Z"
+    message: no conflicts found
+    reason: NoConflicts
+    status: "True"
+    type: NamesAccepted
+  - lastTransitionTime: "2024-09-09T18:12:48Z"
+    message: the initial names have been accepted
+    reason: InitialNamesAccepted
+    status: "True"
+    type: Established
+  storedVersions:
+  - v1beta1

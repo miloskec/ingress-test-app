@@ -1,0 +1,203 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+    meta.helm.sh/release-name: open-appsec
+    meta.helm.sh/release-namespace: appsec
+  creationTimestamp: "2024-09-09T21:55:50Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: open-appsec
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: open-appsec-k8s-nginx-ingress
+    app.kubernetes.io/part-of: open-appsec-k8s-nginx-ingress
+    app.kubernetes.io/version: 1.1.16
+    helm.sh/chart: open-appsec-k8s-nginx-ingress-4.11.2
+  name: open-appsec-open-appsec-k8s-nginx-ingress-controller
+  namespace: appsec
+  resourceVersion: "1564"
+  uid: 7e3e4e96-eda5-4ad7-be4e-73b746a1202a
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: controller
+      app.kubernetes.io/instance: open-appsec
+      app.kubernetes.io/name: open-appsec-k8s-nginx-ingress
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/component: controller
+        app.kubernetes.io/instance: open-appsec
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: open-appsec-k8s-nginx-ingress
+        app.kubernetes.io/part-of: open-appsec-k8s-nginx-ingress
+        app.kubernetes.io/version: 1.1.16
+        helm.sh/chart: open-appsec-k8s-nginx-ingress-4.11.2
+    spec:
+      containers:
+      - args:
+        - --hybrid-mode
+        - --fog
+        - https://inext-agents.cloud.ngen.checkpoint.com/
+        command:
+        - /cp-nano-agent
+        env:
+        - name: appsecClassName
+        - name: user_email
+          value: milos.kecman@gmail.com
+        - name: registered_server
+          value: NGINX Server
+        - name: SHARED_STORAGE_HOST
+          value: open-appsec-shared-storage-svc
+        - name: LEARNING_HOST
+          value: open-appsec-learning-svc
+        - name: TUNING_HOST
+          value: open-appsec-tuning-svc
+        envFrom:
+        - configMapRef:
+            name: appsec-settings-configmap
+        - secretRef:
+            name: appsec-settings-secret
+        image: ghcr.io/openappsec/agent:1.1.16
+        imagePullPolicy: Always
+        name: open-appsec
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /advanced-model
+          name: advanced-model
+      - args:
+        - /nginx-ingress-controller
+        - --publish-service=$(POD_NAMESPACE)/open-appsec-open-appsec-k8s-nginx-ingress-controller
+        - --election-id=open-appsec-open-appsec-k8s-nginx-ingress-leader
+        - --controller-class=k8s.io/appsec-nginx
+        - --ingress-class=nginx
+        - --configmap=$(POD_NAMESPACE)/open-appsec-open-appsec-k8s-nginx-ingress-controller
+        - --validating-webhook=false
+        #- --validating-webhook=:8443
+        #- --validating-webhook-certificate=/usr/local/certificates/cert
+        #- --validating-webhook-key=/usr/local/certificates/key
+        - --enable-metrics=false
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: LD_PRELOAD
+          value: /usr/local/lib/libmimalloc.so
+        image: ghcr.io/openappsec/nginx-ingress-attachment:1.1.16
+        imagePullPolicy: IfNotPresent
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - /wait-shutdown
+        livenessProbe:
+          failureThreshold: 5
+          httpGet:
+            path: /healthz
+            port: 10254
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: controller
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        - containerPort: 443
+          name: https
+          protocol: TCP
+        - containerPort: 8443
+          name: webhook
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: 10254
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 100m
+            memory: 90Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - NET_BIND_SERVICE
+            drop:
+            - ALL
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 101
+          seccompProfile:
+            type: RuntimeDefault
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /usr/local/certificates/
+          name: webhook-cert
+          readOnly: true
+      dnsPolicy: ClusterFirst
+      nodeSelector:
+        kubernetes.io/os: linux
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: open-appsec-open-appsec-k8s-nginx-ingress
+      serviceAccountName: open-appsec-open-appsec-k8s-nginx-ingress
+      terminationGracePeriodSeconds: 300
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: advanced-model-config
+          optional: true
+        name: advanced-model
+      - name: webhook-cert
+        secret:
+          defaultMode: 420
+          secretName: open-appsec-open-appsec-k8s-nginx-ingress-admission
+status:
+  availableReplicas: 1
+  conditions:
+  - lastTransitionTime: "2024-09-09T21:56:20Z"
+    lastUpdateTime: "2024-09-09T21:56:20Z"
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  - lastTransitionTime: "2024-09-09T21:55:50Z"
+    lastUpdateTime: "2024-09-09T21:56:20Z"
+    message: ReplicaSet "open-appsec-open-appsec-k8s-nginx-ingress-controller-6d764cbb65" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1

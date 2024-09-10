@@ -1,0 +1,161 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: "2024-09-09T18:12:48Z"
+  generation: 1
+  name: practices.openappsec.io
+  resourceVersion: "1369"
+  uid: c659c162-010f-46bf-a4f8-fbfe49774036
+spec:
+  conversion:
+    strategy: None
+  group: openappsec.io
+  names:
+    kind: Practice
+    listKind: PracticeList
+    plural: practices
+    shortNames:
+    - practice
+    singular: practice
+  scope: Cluster
+  versions:
+  - name: v1beta1
+    schema:
+      openAPIV3Schema:
+        properties:
+          spec:
+            properties:
+              anti-bot:
+                properties:
+                  injected-URIs:
+                    items:
+                      properties:
+                        uri:
+                          type: string
+                      type: object
+                    type: array
+                  override-mode:
+                    enum:
+                    - prevent-learn
+                    - detect-learn
+                    - prevent
+                    - detect
+                    - inactive
+                    type: string
+                  validated-URIs:
+                    items:
+                      properties:
+                        uri:
+                          type: string
+                      type: object
+                    type: array
+                type: object
+              openapi-schema-validation:
+                properties:
+                  configmap:
+                    items:
+                      type: string
+                    type: array
+                  override-mode:
+                    enum:
+                    - prevent-learn
+                    - detect-learn
+                    - prevent
+                    - detect
+                    - inactive
+                    type: string
+                type: object
+              snort-signatures:
+                properties:
+                  configmap:
+                    items:
+                      type: string
+                    type: array
+                  override-mode:
+                    enum:
+                    - prevent-learn
+                    - detect-learn
+                    - prevent
+                    - detect
+                    - inactive
+                    type: string
+                type: object
+              web-attacks:
+                properties:
+                  max-body-size-kb:
+                    type: integer
+                  max-header-size-bytes:
+                    type: integer
+                  max-object-depth:
+                    type: integer
+                  max-url-size-bytes:
+                    type: integer
+                  minimum-confidence:
+                    enum:
+                    - medium
+                    - high
+                    - critical
+                    type: string
+                  override-mode:
+                    enum:
+                    - prevent-learn
+                    - detect-learn
+                    - prevent
+                    - detect
+                    - inactive
+                    type: string
+                  protections:
+                    properties:
+                      csrf-enabled:
+                        enum:
+                        - prevent-learn
+                        - detect-learn
+                        - prevent
+                        - detect
+                        - inactive
+                        type: string
+                      error-disclosure-enabled:
+                        enum:
+                        - prevent-learn
+                        - detect-learn
+                        - prevent
+                        - detect
+                        - inactive
+                        type: string
+                      non-valid-http-methods:
+                        type: boolean
+                      open-redirect-enabled:
+                        enum:
+                        - prevent-learn
+                        - detect-learn
+                        - prevent
+                        - detect
+                        - inactive
+                        type: string
+                    type: object
+                type: object
+            type: object
+        type: object
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: Practice
+    listKind: PracticeList
+    plural: practices
+    shortNames:
+    - practice
+    singular: practice
+  conditions:
+  - lastTransitionTime: "2024-09-09T18:12:48Z"
+    message: no conflicts found
+    reason: NoConflicts
+    status: "True"
+    type: NamesAccepted
+  - lastTransitionTime: "2024-09-09T18:12:48Z"
+    message: the initial names have been accepted
+    reason: InitialNamesAccepted
+    status: "True"
+    type: Established
+  storedVersions:
+  - v1beta1

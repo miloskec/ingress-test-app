@@ -1,0 +1,773 @@
+---
+# Source: open-appsec-k8s-nginx-ingress/templates/controller-serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    helm.sh/chart: open-appsec-k8s-nginx-ingress-4.11.2
+    app.kubernetes.io/name: open-appsec-k8s-nginx-ingress
+    app.kubernetes.io/instance: open-appsec
+    app.kubernetes.io/version: "1.1.16"
+    app.kubernetes.io/part-of: open-appsec-k8s-nginx-ingress
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: controller
+  name: open-appsec-open-appsec-k8s-nginx-ingress
+  namespace: appsec
+automountServiceAccountToken: true
+---
+# Source: open-appsec-k8s-nginx-ingress/templates/appsec-settings-secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: "appsec-settings-secret"
+data:
+  CROWDSEC_AUTH_DATA: MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=
+---
+# Source: open-appsec-k8s-nginx-ingress/templates/appsec-settings-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "appsec-settings-configmap"
+data:
+  CROWDSEC_ENABLED: "false"
+  CROWDSEC_API_URL: http://crowdsec-service:8080/v1/decisions/stream
+  CROWDSEC_AUTH_METHOD: apikey
+  CROWDSEC_MODE: prevent
+  CROWDSEC_LOGGING: enabled
+---
+# Source: open-appsec-k8s-nginx-ingress/templates/controller-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    helm.sh/chart: open-appsec-k8s-nginx-ingress-4.11.2
+    app.kubernetes.io/name: open-appsec-k8s-nginx-ingress
+    app.kubernetes.io/instance: open-appsec
+    app.kubernetes.io/version: "1.1.16"
+    app.kubernetes.io/part-of: open-appsec-k8s-nginx-ingress
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: controller
+  name: open-appsec-open-appsec-k8s-nginx-ingress-controller
+  namespace: appsec
+data:
+  allow-snippet-annotations: "false"
+---
+# Source: open-appsec-k8s-nginx-ingress/templates/clusterrole.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    helm.sh/chart: open-appsec-k8s-nginx-ingress-4.11.2
+    app.kubernetes.io/name: open-appsec-k8s-nginx-ingress
+    app.kubernetes.io/instance: open-appsec
+    app.kubernetes.io/version: "1.1.16"
+    app.kubernetes.io/part-of: open-appsec-k8s-nginx-ingress
+    app.kubernetes.io/managed-by: Helm
+  name: open-appsec-open-appsec-k8s-nginx-ingress
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+      - endpoints
+      - nodes
+      - pods
+      - secrets
+      - namespaces
+    verbs:
+      - list
+      - watch
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - ingresses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - ingresses/status
+    verbs:
+      - update
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - ingressclasses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - discovery.k8s.io
+    resources:
+      - endpointslices
+    verbs:
+      - list
+      - watch
+      - get
+  - apiGroups:
+      - openappsec.io
+    resources:
+      - '*'
+    verbs:
+      - get
+      - list
+      - watch
+---
+# Source: open-appsec-k8s-nginx-ingress/templates/clusterrolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    helm.sh/chart: open-appsec-k8s-nginx-ingress-4.11.2
+    app.kubernetes.io/name: open-appsec-k8s-nginx-ingress
+    app.kubernetes.io/instance: open-appsec
+    app.kubernetes.io/version: "1.1.16"
+    app.kubernetes.io/part-of: open-appsec-k8s-nginx-ingress
+    app.kubernetes.io/managed-by: Helm
+  name: open-appsec-open-appsec-k8s-nginx-ingress
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: open-appsec-open-appsec-k8s-nginx-ingress
+subjects:
+  - kind: ServiceAccount
+    name: open-appsec-open-appsec-k8s-nginx-ingress
+    namespace: appsec
+  - kind: ServiceAccount
+    name: tuning-svc-account
+    namespace: "appsec"
+---
+# Source: open-appsec-k8s-nginx-ingress/templates/controller-role.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    helm.sh/chart: open-appsec-k8s-nginx-ingress-4.11.2
+    app.kubernetes.io/name: open-appsec-k8s-nginx-ingress
+    app.kubernetes.io/instance: open-appsec
+    app.kubernetes.io/version: "1.1.16"
+    app.kubernetes.io/part-of: open-appsec-k8s-nginx-ingress
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: controller
+  name: open-appsec-open-appsec-k8s-nginx-ingress
+  namespace: appsec
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+      - pods
+      - secrets
+      - endpoints
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - ingresses
+    verbs:
+      - get
+      - list
+      - watch
+  # Omit Ingress status permissions if `--update-status` is disabled.
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - ingresses/status
+    verbs:
+      - update
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - ingressclasses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    resourceNames:
+      - open-appsec-open-appsec-k8s-nginx-ingress-leader
+    verbs:
+      - get
+      - update
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - create
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+  - apiGroups:
+      - discovery.k8s.io
+    resources:
+      - endpointslices
+    verbs:
+      - list
+      - watch
+      - get
+  - apiGroups:
+      - openappsec.io
+    resources:
+      - '*'
+    verbs:
+      - get
+      - list
+      - watch
+---
+# Source: open-appsec-k8s-nginx-ingress/templates/controller-rolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    helm.sh/chart: open-appsec-k8s-nginx-ingress-4.11.2
+    app.kubernetes.io/name: open-appsec-k8s-nginx-ingress
+    app.kubernetes.io/instance: open-appsec
+    app.kubernetes.io/version: "1.1.16"
+    app.kubernetes.io/part-of: open-appsec-k8s-nginx-ingress
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: controller
+  name: open-appsec-open-appsec-k8s-nginx-ingress
+  namespace: appsec
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: open-appsec-open-appsec-k8s-nginx-ingress
+subjects:
+  - kind: ServiceAccount
+    name: open-appsec-open-appsec-k8s-nginx-ingress
+    namespace: appsec
+---
+# Source: open-appsec-k8s-nginx-ingress/templates/controller-service-webhook.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    helm.sh/chart: open-appsec-k8s-nginx-ingress-4.11.2
+    app.kubernetes.io/name: open-appsec-k8s-nginx-ingress
+    app.kubernetes.io/instance: open-appsec
+    app.kubernetes.io/version: "1.1.16"
+    app.kubernetes.io/part-of: open-appsec-k8s-nginx-ingress
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: controller
+  name: open-appsec-open-appsec-k8s-nginx-ingress-controller-admission
+  namespace: appsec
+spec:
+  type: ClusterIP
+  ports:
+    - name: https-webhook
+      port: 443
+      targetPort: webhook
+      appProtocol: https
+  selector:
+    app.kubernetes.io/name: open-appsec-k8s-nginx-ingress
+    app.kubernetes.io/instance: open-appsec
+    app.kubernetes.io/component: controller
+---
+# Source: open-appsec-k8s-nginx-ingress/templates/controller-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+  labels:
+    helm.sh/chart: open-appsec-k8s-nginx-ingress-4.11.2
+    app.kubernetes.io/name: open-appsec-k8s-nginx-ingress
+    app.kubernetes.io/instance: open-appsec
+    app.kubernetes.io/version: "1.1.16"
+    app.kubernetes.io/part-of: open-appsec-k8s-nginx-ingress
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: controller
+  name: open-appsec-open-appsec-k8s-nginx-ingress-controller
+  namespace: appsec
+spec:
+  type: LoadBalancer
+  ipFamilyPolicy: SingleStack
+  ipFamilies: 
+    - IPv4
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: http
+      appProtocol: http
+    - name: https
+      port: 443
+      protocol: TCP
+      targetPort: https
+      appProtocol: https
+  selector:
+    app.kubernetes.io/name: open-appsec-k8s-nginx-ingress
+    app.kubernetes.io/instance: open-appsec
+    app.kubernetes.io/component: controller
+---
+# Source: open-appsec-k8s-nginx-ingress/templates/learning-services.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: open-appsec-learning-svc
+  namespace: appsec
+spec:
+  ports:
+    - name: "http"
+      port: 80
+      targetPort: 80
+    - name: "https"
+      port: 443
+      targetPort: 80
+  selector:
+    app: open-appsec-learning-lbl
+---
+# Source: open-appsec-k8s-nginx-ingress/templates/learning-services.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: open-appsec-shared-storage-svc
+  namespace: appsec
+spec:
+  ports:
+    - name: "http"
+      port: 80
+      targetPort: 80
+    - name: "https"
+      port: 443
+      targetPort: 80
+  selector:
+    app: open-appsec-shared-storage-lbl
+---
+# Source: open-appsec-k8s-nginx-ingress/templates/appsec.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    helm.sh/chart: open-appsec-k8s-nginx-ingress-4.11.2
+    app.kubernetes.io/name: open-appsec-k8s-nginx-ingress
+    app.kubernetes.io/instance: open-appsec
+    app.kubernetes.io/version: "1.1.16"
+    app.kubernetes.io/part-of: open-appsec-k8s-nginx-ingress
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: controller
+  name: open-appsec-open-appsec-k8s-nginx-ingress-controller
+  namespace: appsec
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: open-appsec-k8s-nginx-ingress
+      app.kubernetes.io/instance: open-appsec
+      app.kubernetes.io/component: controller
+  replicas: 1
+  revisionHistoryLimit: 10
+  minReadySeconds: 0
+  template:
+    metadata:
+      labels:
+        helm.sh/chart: open-appsec-k8s-nginx-ingress-4.11.2
+        app.kubernetes.io/name: open-appsec-k8s-nginx-ingress
+        app.kubernetes.io/instance: open-appsec
+        app.kubernetes.io/version: "1.1.16"
+        app.kubernetes.io/part-of: open-appsec-k8s-nginx-ingress
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/component: controller
+    spec:
+      dnsPolicy: ClusterFirst
+      containers:
+        - name: open-appsec
+          securityContext:
+            
+            null
+          image: "ghcr.io/openappsec/agent:1.1.16"
+          command:
+          - /cp-nano-agent
+          imagePullPolicy: Always
+          args:
+          - --hybrid-mode
+          - --fog
+          - https://inext-agents.cloud.ngen.checkpoint.com/
+          imagePullPolicy: Always
+          env:
+            - name: appsecClassName
+              value: 
+            - name: user_email
+              value: milos.kecman@gmail.com
+            - name: registered_server
+              value: "NGINX Server"
+            - name: SHARED_STORAGE_HOST
+              value: open-appsec-shared-storage-svc
+            - name: LEARNING_HOST
+              value: open-appsec-learning-svc
+            - name: TUNING_HOST
+              value: open-appsec-tuning-svc
+          envFrom:
+          - configMapRef:
+              name: appsec-settings-configmap
+          - secretRef:
+              name: appsec-settings-secret
+          resources:
+            
+            null
+          volumeMounts:
+          - name: advanced-model
+            mountPath: /advanced-model
+        - name: controller
+          image: "ghcr.io/openappsec/nginx-ingress-attachment:1.1.16"
+          imagePullPolicy: IfNotPresent
+          lifecycle: 
+            preStop:
+              exec:
+                command:
+                - /wait-shutdown
+          args: 
+            - /nginx-ingress-controller
+            - --publish-service=$(POD_NAMESPACE)/open-appsec-open-appsec-k8s-nginx-ingress-controller
+            - --election-id=open-appsec-open-appsec-k8s-nginx-ingress-leader
+            - --controller-class=k8s.io/appsec-nginx
+            - --ingress-class=nginx
+            - --configmap=$(POD_NAMESPACE)/open-appsec-open-appsec-k8s-nginx-ingress-controller
+            - --validating-webhook=:8443
+            - --validating-webhook-certificate=/usr/local/certificates/cert
+            - --validating-webhook-key=/usr/local/certificates/key
+            - --enable-metrics=false
+          securityContext: 
+            runAsNonRoot: true
+            runAsUser: 101
+            allowPrivilegeEscalation: false
+            seccompProfile: 
+              type: RuntimeDefault
+            capabilities:
+              drop:
+              - ALL
+              add:
+              - NET_BIND_SERVICE
+            readOnlyRootFilesystem: false
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: LD_PRELOAD
+              value: /usr/local/lib/libmimalloc.so
+          livenessProbe: 
+            failureThreshold: 5
+            httpGet:
+              path: /healthz
+              port: 10254
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          readinessProbe: 
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: 10254
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+            - name: https
+              containerPort: 443
+              protocol: TCP
+            - name: webhook
+              containerPort: 8443
+              protocol: TCP
+          volumeMounts:
+            - name: webhook-cert
+              mountPath: /usr/local/certificates/
+              readOnly: true
+          resources: 
+            requests:
+              cpu: 100m
+              memory: 90Mi
+      nodeSelector: 
+        kubernetes.io/os: linux
+      serviceAccountName: open-appsec-open-appsec-k8s-nginx-ingress
+      terminationGracePeriodSeconds: 300
+      volumes:
+        - name: advanced-model
+          configMap:
+            name: advanced-model-config
+            optional: true
+        - name: webhook-cert
+          secret:
+            secretName: open-appsec-open-appsec-k8s-nginx-ingress-admission
+---
+# Source: open-appsec-k8s-nginx-ingress/templates/learning-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: open-appsec-learning-deployment
+  labels:
+    app: open-appsec-learning-lbl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: open-appsec-learning-lbl
+  template:
+    metadata:
+      labels:
+        app: open-appsec-learning-lbl
+        group: fog-core
+    spec:
+      securityContext:
+        runAsUser: 0
+      containers:
+        - name:  open-appsec-learning
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /health/live
+              port: 80
+              scheme: HTTP
+            initialDelaySeconds: 20
+            periodSeconds: 5
+            timeoutSeconds: 10
+          image: ghcr.io/openappsec/smartsync:latest
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /health/ready
+              port: 80
+              scheme: HTTP
+            initialDelaySeconds: 3
+            periodSeconds: 15
+            successThreshold: 1
+            timeoutSeconds: 10
+          env:
+            - name: SHARED_STORAGE_HOST
+              value: open-appsec-shared-storage-svc
+            - name: K8S_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+---
+# Source: open-appsec-k8s-nginx-ingress/templates/learning-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: open-appsec-shared-storage-deployment
+  labels:
+    app: open-appsec-shared-storage-lbl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: open-appsec-shared-storage-lbl
+  template:
+    metadata:
+      labels:
+        app: open-appsec-shared-storage-lbl
+        group: fog-core
+    spec:
+      securityContext:
+        runAsUser: 0
+      containers:
+        - name:  open-appsec-shared-storage
+          imagePullPolicy: Always
+          image: ghcr.io/openappsec/smartsync-shared-files:latest
+          env:
+            - name: K8S_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          ports:
+            - containerPort: 80
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /health/live
+              port: 80
+              scheme: HTTP
+            initialDelaySeconds: 20
+            periodSeconds: 5
+            timeoutSeconds: 10
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /health/ready
+              port: 80
+              scheme: HTTP
+            initialDelaySeconds: 3
+            periodSeconds: 15
+            successThreshold: 1
+            timeoutSeconds: 10
+---
+# Source: open-appsec-k8s-nginx-ingress/templates/controller-ingressclass.yaml
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  labels:
+    helm.sh/chart: open-appsec-k8s-nginx-ingress-4.11.2
+    app.kubernetes.io/name: open-appsec-k8s-nginx-ingress
+    app.kubernetes.io/instance: open-appsec
+    app.kubernetes.io/version: "1.1.16"
+    app.kubernetes.io/part-of: open-appsec-k8s-nginx-ingress
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: controller
+  name: appsec-nginx
+spec:
+  controller: k8s.io/appsec-nginx
+---
+# Source: open-appsec-k8s-nginx-ingress/templates/controller-poddisruptionbudget.yaml
+# PDB is not supported for DaemonSets.
+# https://github.com/kubernetes/kubernetes/issues/108124
+---
+# Source: open-appsec-k8s-nginx-ingress/templates/default-policy.yaml
+apiVersion: openappsec.io/v1beta1
+kind: CustomResponse
+metadata:
+  name: 403-forbidden
+spec:
+  mode: response-code-only ## configurable modes: {block-page|redirect|response-code-only}
+  message-title: ""
+  message-body: ""
+  http-response-code: 403
+---
+# Source: open-appsec-k8s-nginx-ingress/templates/default-policy.yaml
+apiVersion: openappsec.io/v1beta1
+kind: LogTrigger
+metadata:
+  name: appsec-log-trigger
+spec:
+  appsec-logging:
+    detect-events: true
+    prevent-events: true
+    all-web-requests: false
+  additional-suspicious-events-logging:
+    enabled: true
+    minimum-severity: high # {high|critical}
+    response-body: false
+    response-code: true
+  extended-logging:
+    url-path: true
+    url-query: true
+    http-headers: false
+    request-body: false
+  log-destination:
+    cloud: true
+    stdout:
+      format: json-formatted
+---
+# Source: open-appsec-k8s-nginx-ingress/templates/default-policy.yaml
+apiVersion: openappsec.io/v1beta1
+kind: Practice
+metadata:
+  name: appsec-best-practice
+spec:
+  web-attacks:
+    override-mode: prevent-learn
+    minimum-confidence: high
+  anti-bot:
+    injected-URIs: []
+    validated-URIs: []
+  snort-signatures:
+    configmap: []
+  openapi-schema-validation:
+    configmap: []
+---
+# Source: open-appsec-k8s-nginx-ingress/templates/admission-webhooks/validating-webhook.yaml
+# before changing this value, check the required kubernetes version
+# https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#prerequisites
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+  labels:
+    helm.sh/chart: open-appsec-k8s-nginx-ingress-4.11.2
+    app.kubernetes.io/name: open-appsec-k8s-nginx-ingress
+    app.kubernetes.io/instance: open-appsec
+    app.kubernetes.io/version: "1.1.16"
+    app.kubernetes.io/part-of: open-appsec-k8s-nginx-ingress
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: admission-webhook
+  name: open-appsec-open-appsec-k8s-nginx-ingress-admission
+webhooks:
+  - name: validate.nginx.ingress.kubernetes.io
+    matchPolicy: Equivalent
+    rules:
+      - apiGroups:
+          - networking.k8s.io
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - ingresses
+    failurePolicy: Fail
+    sideEffects: None
+    admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: open-appsec-open-appsec-k8s-nginx-ingress-controller-admission
+        namespace: appsec
+        path: /networking/v1/ingresses
+
