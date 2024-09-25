@@ -1,5 +1,5 @@
 
-# OpenAppSec Project with Minikube & Ingress
+# OpenAppSec Project with Minikube & Ingress - TEST
 
 This project is an implementation of [Open AppSec](https://docs.openappsec.io/getting-started/start-with-kubernetes/install-using-interactive-cli-tool-ingress-nginx) (open-appsec) security on top of an NGINX Ingress Controller in a Minikube cluster. The project leverages a declarative approach, using YAML files to define Kubernetes resources for easy customization. This method can be preferable for developers who want to avoid the complexity of Helm charts or interactive CLI scripts, and prefer full control over the resources in a Kubernetes cluster.
 
